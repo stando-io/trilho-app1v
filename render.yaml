@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: cd server && npm ci && npm run build && npm run seed
-    startCommand: cd server && npm run start
+    buildCommand: npm ci --prefix server && npm run build --prefix server && npm run seed --prefix server
+    startCommand: npm run start --prefix server
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
