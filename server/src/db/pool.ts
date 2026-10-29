@@ -6,32 +6,32 @@ const { Pool } = pg;
 pg.types.setTypeParser(1082, (value: string) => value);
 
 function parseConnectionString(connStr: string) {
-  // Remove custom query params
-  let cleanStr = connStr
-    .replace(/[?&]sslmode=[^&]+/, '')
-    .replace(/[?&]sslrejectunauthorized=[^&]+/, '')
-    .replace(/\?&/, '?')
-    .replace(/\?$/, '');
-  
-  // Parse using URL
-  const url = new URL(cleanStr);
-  
   const sslModeMatch = connStr.match(/[?&]sslmode=([^&]+)/);
   const sslRejectUnauthorizedMatch = connStr.match(/[?&]sslrejectunauthorized=([^&]+)/);
-  
+
   const sslMode = sslModeMatch ? sslModeMatch[1] : 'require';
   const sslRejectUnauthorized = sslRejectUnauthorizedMatch ? sslRejectUnauthorizedMatch[1] !== 'false' : true;
-  
-  // Decode URL-encoded username/password
+
+  let cleanStr = connStr
+    .replace(/[?&]sslmode=[^&]+/g, '')
+    .replace(/[?&]sslrejectunauthorized=[^&]+/g, '')
+    .replace(/[?&]channel_binding=[^&]+/g, '')
+    .replace(/\?&/g, '?')
+    .replace(/&&+/g, '&')
+    .replace(/&$/g, '')
+    .replace(/\?$/g, '');
+
+  const url = new URL(cleanStr);
   const user = decodeURIComponent(url.username);
   const password = decodeURIComponent(url.password);
-  
+  const database = url.pathname.replace(/^\//, '') || 'postgres';
+
   return {
     user,
     password,
     host: url.hostname,
     port: parseInt(url.port || '5432'),
-    database: url.pathname.slice(1) || 'postgres',
+    database,
     ssl: sslMode === 'disable' ? false : { rejectUnauthorized: sslRejectUnauthorized },
   };
 }
