@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: trilho-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: cd server && npm ci && npm run build && npm run seed
+    startCommand: cd server && npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: BASE_URL
+        fromService:
+          name: trilho-frontend
+          type: web
+          property: host
+      - key: ADMIN_NAME
+        value: "Administrador"
+      - key: ADMIN_EMAIL
+        value: "admin@trilho.local"
+      - key: ADMIN_PASSWORD
+        generateValue: true
+    autoDeploy: true

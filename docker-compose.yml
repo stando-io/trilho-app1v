@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trilho-app-postgres
+    environment:
+      POSTGRES_USER: trilho
+      POSTGRES_PASSWORD: trilho_local
+      POSTGRES_DB: trilho_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - trilho_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trilho -d trilho_system"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  trilho_pgdata:
