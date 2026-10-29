@@ -180,22 +180,32 @@ router.post('/login', publicLimiter, async (req, res, next) => {
       throw invalidError;
     }
 
-    const valid = await verify(user.password_hash, body.password).catch(() => false);
+    console.error('[login] user found:', user.id, 'hash prefix:', user.password_hash?.slice(0, 20));
+    const valid = await verify(user.password_hash, body.password).catch((e) => { console.error('[login] verify error:', e); return false; });
+    console.error('[login] verify result:', valid);
     if (!valid) {
       await audit(req, 'login_failed', 'user', user.id, { email: body.email });
       throw invalidError;
     }
 
+    console.error('[login] verify ok, calling promisifySession');
     await promisifySession(req);
+    console.error('[login] promisifySession ok');
     req.session.userId = user.id;
+    console.error('[login] session userId set, saving session');
     await new Promise<void>((resolve, reject) => {
       req.session.save((error) => (error ? reject(error) : resolve()));
     });
+    console.error('[login] session saved');
     await query('UPDATE users SET last_login_at = now() WHERE id = $1', [user.id]);
+    console.error('[login] last_login_at updated');
 
     await audit(req, 'login', 'user', user.id);
+    console.error('[login] audit ok');
     res.json(await mePayload(user.id));
+    console.error('[login] response sent');
   } catch (error) {
+    console.error('[login] ERROR:', error);
     next(error);
   }
 });
