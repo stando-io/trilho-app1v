@@ -7,8 +7,8 @@
   "devCommand": "npm run dev",
   "regions": ["gru1"],
   "env": {
-    "VITE_API_URL": "https://trilho-app.onrender.com",
-    "VITE_WS_URL": "wss://trilho-app.onrender.com"
+    "VITE_API_URL": "https://trilho-app1v.onrender.com",
+    "VITE_WS_URL": "wss://trilho-app1v.onrender.com"
   },
   "headers": [
     {
