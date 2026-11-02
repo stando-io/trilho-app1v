@@ -1,15 +1,16 @@
 {
   "version": 2,
   "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm ci",
-  "devCommand": "npm run dev",
-  "regions": ["gru1"],
-  "env": {
-    "VITE_API_URL": "https://trilho-app1v.onrender.com",
-    "VITE_WS_URL": "wss://trilho-app1v.onrender.com"
-  },
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/dist",
+  "installCommand": "cd app && npm ci",
+  "devCommand": "cd app && npm run dev",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -27,12 +28,6 @@
           "value": "1; mode=block"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }
