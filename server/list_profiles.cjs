@@ -1,0 +1,1 @@
+const { Pool } = require('pg'); const p = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }); p.query('SELECT id,name FROM profiles ORDER BY name').then(r => { r.rows.forEach(x => console.log(x.name)); return p.end(); });

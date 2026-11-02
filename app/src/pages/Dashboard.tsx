@@ -87,7 +87,9 @@ export default function Dashboard() {
 
   const handleEvent = useCallback(
     (event: { type: string }) => {
-      if (RELOAD_EVENTS.has(event.type)) void load();
+      if (RELOAD_EVENTS.has(event.type)) {
+        void load();
+      }
     },
     [load],
   );

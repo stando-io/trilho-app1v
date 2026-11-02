@@ -29,7 +29,9 @@ const RECONNECT_MS = 2000;
 
 function getWsUrl(): string {
   const envWsUrl = import.meta.env.VITE_WS_URL;
-  if (envWsUrl) return envWsUrl;
+  if (envWsUrl) {
+    return envWsUrl.endsWith('/ws') ? envWsUrl : `${envWsUrl}/ws`;
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   return `${protocol}://${window.location.host}/ws`;
 }
@@ -44,25 +46,31 @@ export function useProjectEvents(projectId: string, onEvent: (event: ProjectEven
 
     function connect() {
       const wsUrl = getWsUrl();
-      socket = new WebSocket(wsUrl);
+      try {
+        socket = new WebSocket(wsUrl);
 
-      socket.onopen = () => {
-        socket?.send(JSON.stringify({ type: 'subscribe', project_id: projectId }));
-      };
+        socket.onopen = () => {
+          socket?.send(JSON.stringify({ type: 'subscribe', project_id: projectId }));
+        };
 
-      socket.onmessage = (message) => {
-        try {
-          const event = JSON.parse(message.data) as ProjectEvent;
-          if (event.project_id === projectId) onEvent(event);
-        } catch {
-          return;
+        socket.onmessage = (message) => {
+          try {
+            const event = JSON.parse(message.data) as ProjectEvent;
+            if (event.project_id === projectId) onEvent(event);
+          } catch {
+            return;
+          }
+        };
+
+        socket.onclose = () => {
+          if (disposed) return;
+          retryTimer = setTimeout(connect, RECONNECT_MS);
+        };
+      } catch {
+        if (!disposed) {
+          retryTimer = setTimeout(connect, RECONNECT_MS);
         }
-      };
-
-      socket.onclose = () => {
-        if (disposed) return;
-        retryTimer = setTimeout(connect, RECONNECT_MS);
-      };
+      }
     }
 
     connect();
@@ -83,21 +91,27 @@ export function useUserEvents(onEvent: (event: UserEvent) => void): void {
 
     function connect() {
       const wsUrl = getWsUrl();
-      socket = new WebSocket(wsUrl);
+      try {
+        socket = new WebSocket(wsUrl);
 
-      socket.onmessage = (message) => {
-        try {
-          const event = JSON.parse(message.data) as UserEvent;
-          if (event.type === 'notification' && event.notification) onEvent(event);
-        } catch {
-          return;
+        socket.onmessage = (message) => {
+          try {
+            const event = JSON.parse(message.data) as UserEvent;
+            if (event.type === 'notification' && event.notification) onEvent(event);
+          } catch {
+            return;
+          }
+        };
+
+        socket.onclose = () => {
+          if (disposed) return;
+          retryTimer = setTimeout(connect, RECONNECT_MS);
+        };
+      } catch {
+        if (!disposed) {
+          retryTimer = setTimeout(connect, RECONNECT_MS);
         }
-      };
-
-      socket.onclose = () => {
-        if (disposed) return;
-        retryTimer = setTimeout(connect, RECONNECT_MS);
-      };
+      }
     }
 
     connect();
