@@ -179,6 +179,14 @@ export default function Base() {
   );
   useProjectEvents(projectId, handleEvent);
 
+  useEffect(() => {
+    if (!projectId) return;
+    const id = setInterval(() => {
+      void load();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [projectId, load]);
+
   function structural(task: () => Promise<unknown>) {
     return gate.guarded(async () => {
       await task();

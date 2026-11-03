@@ -189,6 +189,15 @@ export default function Kanban() {
   useProjectEvents(projectId, handleEvent);
 
   useEffect(() => {
+    if (!projectId) return;
+    const id = setInterval(() => {
+      if (Date.now() < suppressEventsUntil.current) return;
+      void loadBoard();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [projectId, loadBoard]);
+
+  useEffect(() => {
     void fetchViewPreferences()
       .then((prefs) => {
         setViewPrefs(prefs);

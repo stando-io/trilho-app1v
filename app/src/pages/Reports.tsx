@@ -667,6 +667,26 @@ export default function Reports() {
   }, [projectId, filters, rangeError]);
 
   useEffect(() => {
+    if (!projectId) return;
+    const id = setInterval(() => {
+      if (rangeError) return;
+      const query = filtersToQuery(filters);
+      Promise.all([
+        api<ReportTable>(`/projects/${projectId}/reports/progress${query}`),
+        api<ReportTable>(`/projects/${projectId}/reports/cards${query}`),
+        api<ReportTable>(`/projects/${projectId}/reports/learning${query}`),
+      ])
+        .then(([progressReport, cardsReport, learningReport]) => {
+          setProgress(progressReport);
+          setCards(cardsReport);
+          setLearning(learningReport);
+        })
+        .catch(() => undefined);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [projectId, filters, rangeError]);
+
+  useEffect(() => {
     if (!exportOpen) return undefined;
     const handleOutside = (event: MouseEvent) => {
       if (exportRef.current && !exportRef.current.contains(event.target as Node)) {

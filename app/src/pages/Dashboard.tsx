@@ -95,6 +95,14 @@ export default function Dashboard() {
   );
   useProjectEvents(projectId, handleEvent);
 
+  useEffect(() => {
+    if (!projectId) return;
+    const id = setInterval(() => {
+      void load();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [projectId, load]);
+
   async function applyContext(userResult: MeUser | null, changedProjectId: string) {
     if (changedProjectId !== projectId) return;
     const current = userResult?.projects.find((project) => project.id === projectId);
