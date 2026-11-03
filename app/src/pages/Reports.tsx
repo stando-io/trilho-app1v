@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError } from '../api';
 import { can, useAuth } from '../auth';
 import { InfoTip } from '../components/InfoTip';
@@ -7,7 +7,6 @@ import PaginationFooter from '../components/PaginationFooter';
 import ScoreBar from '../components/ScoreBar';
 import { useToast } from '../components/Toast';
 import { useProjectId } from '../project';
-import { useProjectEvents } from '../realtime';
 import { usePageSize } from '../usePageSize';
 import { avatarColor, initials } from '../views/taskViewUtils';
 
