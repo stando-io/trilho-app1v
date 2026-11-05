@@ -23,12 +23,23 @@ import webhooksRouter from './routes/webhooks.js';
 
 const PgSession = ConnectPgSimple(session);
 
+function getAllowedOrigins(): string[] {
+  const origins = [config.baseUrl];
+  if (config.nodeEnv === 'production') {
+    const extra = process.env.EXTRA_CORS_ORIGINS?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+    origins.push(...extra);
+  } else {
+    origins.push('http://localhost:5173', 'http://127.0.0.1:5173');
+  }
+  return origins;
+}
+
 export function createApp(): express.Express {
   const app = express();
 
   app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: config.baseUrl, credentials: true }));
+  app.use(cors({ origin: getAllowedOrigins(), credentials: true }));
   app.use(express.json({ limit: '4mb' }));
 
   const uploadsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'uploads');
@@ -43,12 +54,16 @@ export function createApp(): express.Express {
       store: new PgSession({ pool, tableName: 'sessions' }),
       cookie: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: config.isProduction ? 'none' : 'lax',
         secure: config.cookieSecure,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
     }),
   );
+
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
 
   app.get('/api/v1/health', (_req, res) => {
     res.json({ status: 'ok' });
