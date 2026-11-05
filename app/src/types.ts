@@ -1,4 +1,4 @@
-export interface UserProfile {
+﻿export interface UserProfile {
   id: string;
   name: string;
   screens: string[];
@@ -197,4 +197,21 @@ export interface DashboardData {
   team: TeamMember[];
   calendar: CalendarItem[];
   weekly_evolution: WeeklyPoint[];
+}
+
+export interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+  is_active: boolean;
+  profile_id: string;
+  profile_name: string;
+  role_id: string | null;
+  role_name: string | null;
+  project_ids: string[];
+  created_at: string;
+  last_login_at: string | null;
+  approval_status?: 'active' | 'pending' | 'rejected';
+  company?: string | null;
+  request_message?: string | null;
 }

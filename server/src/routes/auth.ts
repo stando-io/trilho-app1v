@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { z } from 'zod';
 import { rateLimit } from 'express-rate-limit';
 import { hash, verify } from '@node-rs/argon2';
@@ -71,6 +71,14 @@ const updateMeSchema = z
 
 const changePasswordSchema = z.object({
   current_password: z.string().min(1, 'Senha atual obrigatória'),
+  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
+});
+
+const requestAccessSchema = z.object({
+  name: z.string().min(2, 'Nome muito curto'),
+  email: z.string().email('E-mail inválido'),
+  company: z.string().max(200).optional(),
+  message: z.string().max(2000).optional(),
   password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
 });
 
@@ -168,44 +176,50 @@ router.post('/login', publicLimiter, async (req, res, next) => {
       id: string;
       password_hash: string | null;
       is_active: boolean;
+      approval_status: string | null;
     }>(
-      'SELECT id, password_hash, is_active FROM users WHERE lower(email) = lower($1)',
+      'SELECT id, password_hash, is_active, approval_status FROM users WHERE lower(email) = lower($1)',
       [body.email],
     );
 
     const invalidError = new ApiError(401, 'E-mail ou senha inválidos');
 
-    if (!user || !user.is_active || !user.password_hash) {
+    if (!user || !user.password_hash) {
       await audit(req, 'login_failed', 'user', null, { email: body.email });
       throw invalidError;
     }
 
-    console.error('[login] user found:', user.id, 'hash prefix:', user.password_hash?.slice(0, 20));
-    const valid = await verify(user.password_hash, body.password).catch((e) => { console.error('[login] verify error:', e); return false; });
-    console.error('[login] verify result:', valid);
+    if (user.approval_status === 'pending') {
+      const pendingError = new ApiError(
+        403,
+        'Estamos avaliando seu cadastro. Assim que aprovado seu acesso sera liberado.',
+        'pending_approval',
+      );
+      await audit(req, 'login_failed', 'user', user.id, { email: body.email, reason: 'pending_approval' });
+      throw pendingError;
+    }
+
+    if (!user.is_active) {
+      await audit(req, 'login_failed', 'user', user.id, { email: body.email });
+      throw invalidError;
+    }
+
+    const valid = await verify(user.password_hash, body.password).catch(() => false);
     if (!valid) {
       await audit(req, 'login_failed', 'user', user.id, { email: body.email });
       throw invalidError;
     }
 
-    console.error('[login] verify ok, calling promisifySession');
     await promisifySession(req);
-    console.error('[login] promisifySession ok');
     req.session.userId = user.id;
-    console.error('[login] session userId set, saving session');
     await new Promise<void>((resolve, reject) => {
       req.session.save((error) => (error ? reject(error) : resolve()));
     });
-    console.error('[login] session saved');
     await query('UPDATE users SET last_login_at = now() WHERE id = $1', [user.id]);
-    console.error('[login] last_login_at updated');
 
     await audit(req, 'login', 'user', user.id);
-    console.error('[login] audit ok');
     res.json(await mePayload(user.id));
-    console.error('[login] response sent');
   } catch (error) {
-    console.error('[login] ERROR:', error);
     next(error);
   }
 });
@@ -288,6 +302,62 @@ router.post('/change-password', requireAuth, requirePermission('settings.minha_c
     ]);
     await audit(req, 'password_changed', 'user', req.user!.id);
     res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+const requestAccessLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Muitas solicitações. Aguarde uma hora.' } },
+});
+
+router.post('/request-access', requestAccessLimiter, async (req, res, next) => {
+  try {
+    const body = requestAccessSchema.parse(req.body);
+
+    const existing = await queryOne('SELECT id, approval_status FROM users WHERE lower(email) = lower($1)', [
+      body.email,
+    ]);
+    if (existing) {
+      if (existing.approval_status === 'pending') {
+        throw new ApiError(409, 'Este e-mail já possui um cadastro aguardando aprovação.');
+      }
+      throw new ApiError(409, 'Já existe um usuário com este e-mail');
+    }
+
+    const passwordHash = await hash(body.password);
+    const user = await queryOne<{ id: string }>(
+      `INSERT INTO users (name, email, password_hash, approval_status, is_active, company, request_message)
+       VALUES ($1, $2, $3, 'pending', false, $4, $5) RETURNING id`,
+      [
+        body.name.trim(),
+        body.email.trim().toLowerCase(),
+        passwordHash,
+        body.company?.trim() || null,
+        body.message?.trim() || null,
+      ],
+    );
+    if (!user) throw new ApiError(500, 'Falha ao criar conta de solicitação');
+
+    await queryOne(
+      `INSERT INTO access_requests (user_id, name, email, company, message, status)
+       VALUES ($1, $2, $3, $4, $5, 'pending') RETURNING id`,
+      [
+        user.id,
+        body.name.trim(),
+        body.email.trim().toLowerCase(),
+        body.company?.trim() || null,
+        body.message?.trim() || null,
+      ],
+    );
+
+    await audit(req, 'access_request_created', 'user', user.id, { email: body.email });
+
+    res.status(201).json({ id: user.id });
   } catch (error) {
     next(error);
   }

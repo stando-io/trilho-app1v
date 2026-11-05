@@ -1,10 +1,11 @@
-import type { NextFunction, Request, Response } from 'express';
+﻿import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -22,7 +23,11 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (error instanceof ApiError) {
-    res.status(error.status).json({ error: { message: error.message } });
+    const body: { error: { message: string; code?: string } } = {
+      error: { message: error.message },
+    };
+    if (error.code) body.error.code = error.code;
+    res.status(error.status).json(body);
     return;
   }
   if (error instanceof ZodError) {

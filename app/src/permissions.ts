@@ -1,4 +1,4 @@
-export interface PermissionAction {
+﻿export interface PermissionAction {
   type: 'action';
   key: string;
   label: string;
@@ -124,6 +124,15 @@ export const PERMISSION_TREE: PermissionModule[] = [
               { type: 'action', key: 'settings.niveis.novo', label: 'Novo' },
               { type: 'action', key: 'settings.niveis.editar', label: 'Editar' },
               { type: 'action', key: 'settings.niveis.excluir', label: 'Excluir' },
+            ],
+          },
+          {
+            type: 'group',
+            label: 'Solicitações de Acesso',
+            children: [
+              { type: 'action', key: 'settings.solicitacoes.visualizar', label: 'Visualizar' },
+              { type: 'action', key: 'settings.solicitacoes.aprovar', label: 'Aprovar/Recusar' },
+              { type: 'action', key: 'settings.solicitacoes.excluir', label: 'Excluir' },
             ],
           },
         ],
