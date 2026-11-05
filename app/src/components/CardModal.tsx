@@ -1553,7 +1553,7 @@ export default function CardModal({
               <button
                 type="submit"
                 className="btn"
-                disabled={busy || draft.title.trim().length === 0 || (!draft.id && !draft.column_id)}
+                disabled={busy || draft.title.trim().length === 0}
               >
                 {busy ? 'Salvando' : isConclude ? 'Concluir' : 'Salvar'}
               </button>

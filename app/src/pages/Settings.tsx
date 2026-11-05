@@ -33,6 +33,7 @@ type Section =
   | 'cargos'
   | 'perfis'
   | 'usuarios'
+  | 'solicitacoes'
   | 'layout'
   | 'seguranca'
   | 'chaves'
@@ -87,9 +88,41 @@ interface RoleRow {
   users_count: number;
 }
 
+interface AccessRequestRow {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  company: string | null;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
 interface ProjectOption {
   id: string;
   name: string;
+}
+
+function formatRelativeTime(value: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'há poucos segundos';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return diffMin === 1 ? 'há 1 min' : `há ${diffMin} min`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return diffHour === 1 ? 'há 1h' : `há ${diffHour}h`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return 'ontem';
+  if (diffDay < 7) return `há ${diffDay} dias`;
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
 }
 
 function formatLastAccess(value: string | null): string {
@@ -109,6 +142,7 @@ const ACCOUNT_GROUP: { id: Section; label: string }[] = [
   { id: 'usuarios', label: 'Usuários' },
   { id: 'cargos', label: 'Cargos' },
   { id: 'perfis', label: 'Níveis de Acesso' },
+  { id: 'solicitacoes', label: 'Solicitações de Acesso' },
 ];
 
 const TRAILING_SECTIONS: { id: Section; label: string; icon?: ReactNode }[] = [
@@ -135,6 +169,7 @@ const ALL_SECTIONS: Section[] = [
   'usuarios',
   'cargos',
   'perfis',
+  'solicitacoes',
   'layout',
   'seguranca',
   'chaves',
@@ -148,6 +183,7 @@ const SECTION_PERMISSIONS: Record<Section, string[]> = {
   usuarios: ['settings.usuarios.novo', 'settings.usuarios.editar', 'settings.usuarios.excluir'],
   cargos: ['settings.cargos.novo', 'settings.cargos.editar', 'settings.cargos.excluir'],
   perfis: ['settings.niveis.novo', 'settings.niveis.editar', 'settings.niveis.excluir'],
+  solicitacoes: ['settings.solicitacoes.visualizar'],
   layout: ['settings.temas'],
   seguranca: ['settings.seguranca'],
   chaves: ['settings.integracoes'],
@@ -405,6 +441,20 @@ export default function Settings() {
   const [roleSearch, setRoleSearch] = useState('');
   const [rolePageSize, setRolePageSize] = usePageSize('settings:cargos');
 
+  const [accessRequests, setAccessRequests] = useState<AccessRequestRow[]>([]);
+  const [accessRequestsLoaded, setAccessRequestsLoaded] = useState(false);
+  const [accessRequestsTotal, setAccessRequestsTotal] = useState(0);
+  const [accessRequestsPage, setAccessRequestsPage] = useState(1);
+  const [accessRequestsStatus, setAccessRequestsStatus] = useState<
+    'pending' | 'approved' | 'rejected' | ''
+  >('');
+  const [accessRequestPageSize, setAccessRequestPageSize] = usePageSize('settings:solicitacoes');
+  const [accessRequestSearch, setAccessRequestSearch] = useState('');
+  const [inlineRole, setInlineRole] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const [allProjects, setAllProjects] = useState<ProjectOption[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
 
@@ -471,6 +521,9 @@ export default function Settings() {
   const [confirmingWebhookDelete, setConfirmingWebhookDelete] = useState<WebhookRow | null>(null);
 
   const [infosTab, setInfosTab] = useState<InfosTab>('atualizacoes');
+  const [openReleases, setOpenReleases] = useState<Set<string>>(
+    () => new Set([RELEASES[0]?.version]),
+  );
   const [integrationsTab, setIntegrationsTab] = useState<'api' | 'webhooks' | 'ia'>('api');
 
   const loadProfiles = useCallback(async () => {
@@ -609,6 +662,25 @@ export default function Settings() {
     }
   }, []);
 
+  const loadAccessRequests = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({
+        page: String(accessRequestsPage),
+        limit: String(accessRequestPageSize),
+      });
+      if (accessRequestsStatus) params.set('status', accessRequestsStatus);
+      const data = await api<{ items: AccessRequestRow[]; total: number }>(
+        `/access-requests?${params.toString()}`,
+      );
+      setAccessRequests(data.items);
+      setAccessRequestsTotal(data.total);
+    } catch (err) {
+      toast.error(messageOf(err, 'Erro ao carregar as solicitações'));
+    } finally {
+      setAccessRequestsLoaded(true);
+    }
+  }, [accessRequestsPage, accessRequestPageSize, accessRequestsStatus]);
+
   useEffect(() => {
     if (!user) return;
     setAccountName(user.name);
@@ -669,6 +741,11 @@ export default function Settings() {
       setAuditLoaded(false);
       void loadAudit();
     }
+    if (section === 'solicitacoes') {
+      setAccessRequestsLoaded(false);
+      void loadAccessRequests();
+      if (!rolesLoaded) void loadRoles();
+    }
   }, [
     section,
     loadProfiles,
@@ -681,6 +758,7 @@ export default function Settings() {
     loadWebhooks,
     loadParameters,
     loadAudit,
+    loadAccessRequests,
   ]);
 
   useEffect(() => {
@@ -1923,28 +2001,76 @@ export default function Settings() {
   }
 
   function renderInfosAtualizacoes() {
+    const allOpen = openReleases.size >= RELEASES.length;
     return (
       <div className="infos-updates">
-        <div className="infos-version">{APP_BADGE}</div>
+        <div className="infos-updates-toolbar">
+          <div className="infos-version">{APP_BADGE}</div>
+          <div className="infos-release-toggles">
+            <button
+              type="button"
+              className="profile-tree-toggle"
+              disabled={allOpen}
+              onClick={() => setOpenReleases(new Set(RELEASES.map((release) => release.version)))}
+            >
+              <GroupCaret open={false} />
+              Expandir todas
+            </button>
+            <button
+              type="button"
+              className="profile-tree-toggle"
+              disabled={openReleases.size === 0}
+              onClick={() => setOpenReleases(new Set())}
+            >
+              <GroupCaret open={true} />
+              Recolher todas
+            </button>
+          </div>
+        </div>
         <div className="infos-releases">
-          {RELEASES.map((release) => (
-            <div className="infos-release" key={release.version}>
-              <div className="infos-release-head">
-                <strong>Trilho {release.version}</strong>
-                <span className="infos-release-date">{release.date}</span>
+          {RELEASES.map((release) => {
+            const open = openReleases.has(release.version);
+            return (
+              <div className={`infos-release${open ? ' open' : ''}`} key={release.version}>
+                <button
+                  type="button"
+                  className="infos-release-head"
+                  aria-expanded={open}
+                  onClick={() =>
+                    setOpenReleases((current) => {
+                      const next = new Set(current);
+                      if (next.has(release.version)) {
+                        next.delete(release.version);
+                      } else {
+                        next.add(release.version);
+                      }
+                      return next;
+                    })
+                  }
+                >
+                  <strong>Trilho {release.version}</strong>
+                  <span className="infos-release-date">{release.date}</span>
+                  <span className="infos-release-caret">
+                    <GroupCaret open={open} />
+                  </span>
+                </button>
+                <div className="infos-notes-wrap">
+                  <div className="infos-notes-inner">
+                    <ul className="infos-notes">
+                      {release.notes.map((note) => (
+                        <li className="infos-note" key={note.text}>
+                          <span className={`rel-tag rel-tag-${note.kind}`}>
+                            {RELEASE_NOTE_LABELS[note.kind]}
+                          </span>
+                          <span>{note.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <ul className="infos-notes">
-                {release.notes.map((note) => (
-                  <li className="infos-note" key={note.text}>
-                    <span className={`rel-tag rel-tag-${note.kind}`}>
-                      {RELEASE_NOTE_LABELS[note.kind]}
-                    </span>
-                    <span>{note.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -2709,26 +2835,12 @@ export default function Settings() {
                         </td>
                         <td>{hook.created_by_name}</td>
                         <td>
-                          <div className="key-actions-cell">
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              aria-label="Editar webhook"
-                              title="Editar webhook"
-                              onClick={() => setWebhookModal({ mode: 'edit', webhook: hook })}
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              aria-label="Excluir webhook"
-                              title="Excluir webhook"
-                              onClick={() => setConfirmingWebhookDelete(hook)}
-                            >
-                              🗑️
-                            </button>
-                          </div>
+                          <TableActions
+                            onEdit={() => setWebhookModal({ mode: 'edit', webhook: hook })}
+                            onDelete={() => setConfirmingWebhookDelete(hook)}
+                            editLabel="Editar webhook"
+                            deleteLabel="Excluir webhook"
+                          />
                         </td>
                       </tr>
                     ))}
@@ -2847,6 +2959,289 @@ export default function Settings() {
     );
   }
 
+  async function approveInline(item: AccessRequestRow) {
+    if (!can(currentUser, 'settings.solicitacoes.aprovar') || approvingId) return;
+    setApprovingId(item.id);
+    try {
+      const result = await gate.guarded(async () => {
+        await api(`/access-requests/${item.id}/approve`, {
+          method: 'POST',
+          body: JSON.stringify({
+            profile_id: currentUser.profile.id,
+            role_id: inlineRole[item.id] || undefined,
+          }),
+        });
+      });
+      if (result.ok) {
+        setAccessRequests((current) => current.filter((row) => row.id !== item.id));
+        setAccessRequestsTotal((total) => Math.max(0, total - 1));
+        toast.success('Solicitação aprovada. Conta ativada.');
+      }
+    } catch (err) {
+      toast.error(messageOf(err, 'Erro ao aprovar solicitação'));
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function rejectInline(item: AccessRequestRow) {
+    if (!can(currentUser, 'settings.solicitacoes.aprovar') || rejectingId) return;
+    if (!window.confirm(`Recusar a solicitação de "${item.name}"?`)) return;
+    setRejectingId(item.id);
+    try {
+      const result = await gate.guarded(async () => {
+        await api(`/access-requests/${item.id}/reject`, {
+          method: 'POST',
+          body: JSON.stringify({}),
+        });
+      });
+      if (result.ok) {
+        if (accessRequestsStatus === 'pending') {
+          setAccessRequests((current) => current.filter((row) => row.id !== item.id));
+          setAccessRequestsTotal((total) => Math.max(0, total - 1));
+        } else {
+          setAccessRequests((current) =>
+            current.map((row) => (row.id === item.id ? { ...row, status: 'rejected' } : row)),
+          );
+        }
+        toast.success('Solicitação recusada.');
+      }
+    } catch (err) {
+      toast.error(messageOf(err, 'Erro ao recusar solicitação'));
+    } finally {
+      setRejectingId(null);
+    }
+  }
+
+  async function deleteInline(item: AccessRequestRow) {
+    if (!can(currentUser, 'settings.solicitacoes.excluir') || deletingId) return;
+    if (
+      !window.confirm(
+        `Excluir definitivamente a solicitação de "${item.name}" e a conta do usuário?`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(item.id);
+    try {
+      const result = await gate.guarded(async () => {
+        await api(`/access-requests/${item.id}`, { method: 'DELETE' });
+      });
+      if (result.ok) {
+        setAccessRequests((current) => current.filter((row) => row.id !== item.id));
+        setAccessRequestsTotal((total) => Math.max(0, total - 1));
+        toast.success('Solicitação excluída.');
+      }
+    } catch (err) {
+      toast.error(messageOf(err, 'Erro ao excluir solicitação'));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  function renderSolicitacoes() {
+    const statusLabel: Record<AccessRequestRow['status'], string> = {
+      pending: 'Pendente',
+      approved: 'Aprovada',
+      rejected: 'Recusada',
+    };
+    const search = accessRequestSearch.trim().toLowerCase();
+    const visibleRows = search
+      ? accessRequests.filter(
+          (item) =>
+            item.name.toLowerCase().includes(search) || item.email.toLowerCase().includes(search),
+        )
+      : accessRequests;
+
+    return (
+      <div className="panel panel-list">
+        <div className="panel-head">
+          <div className="panel-head-text">
+            <h2>Solicitações de Acesso</h2>
+            <p className="panel-desc">
+              Pedidos de conta enviados por novos usuários. Aprovar ou recusar avalia o pedido.
+            </p>
+          </div>
+          <div className="panel-head-actions">
+            <span className="search-box">
+              <span className="search-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </span>
+              <input
+                className="settings-search"
+                value={accessRequestSearch}
+                onChange={(event) => setAccessRequestSearch(event.target.value)}
+                placeholder="Buscar nome ou e-mail"
+                aria-label="Buscar solicitação por nome ou e-mail"
+              />
+            </span>
+            <select
+              className="settings-status-filter"
+              value={accessRequestsStatus}
+              onChange={(event) => {
+                setAccessRequestsPage(1);
+                setAccessRequestsStatus(event.target.value as typeof accessRequestsStatus);
+              }}
+              aria-label="Filtrar solicitações por status"
+            >
+              <option value="">Todas</option>
+              <option value="pending">Pendentes</option>
+              <option value="approved">Aprovadas</option>
+              <option value="rejected">Recusadas</option>
+            </select>
+          </div>
+        </div>
+        <div className="panel-list-body">
+          {!accessRequestsLoaded ? (
+            <LoadingOverlay />
+          ) : visibleRows.length === 0 ? (
+            <p>Nenhuma solicitação encontrada.</p>
+          ) : (
+            <>
+              <table className="table table-actions-center">
+                <thead>
+                  <tr>
+                    <th>Solicitante</th>
+                    <th>Pedido em</th>
+                    <th>Mensagem</th>
+                    <th>Cargo ao aprovar</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleRows.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div className="solicitante-cell">
+                          <span
+                            className="avatar"
+                            style={{ background: '#5b4fe9' }}
+                            aria-hidden="true"
+                          >
+                            {item.name.trim().charAt(0).toUpperCase() || '?'}
+                          </span>
+                          <div>
+                            <strong>{item.name}</strong>
+                            <div className="muted small">{item.email}</div>
+                            {item.company && <div className="muted small">{item.company}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td>{formatRelativeTime(item.created_at)}</td>
+                      <td className="muted">{item.message?.trim() || 'N/A'}</td>
+                      <td>
+                        {item.status === 'pending' ? (
+                          <select
+                            value={inlineRole[item.id] ?? ''}
+                            onChange={(event) =>
+                              setInlineRole((current) => ({
+                                ...current,
+                                [item.id]: event.target.value,
+                              }))
+                            }
+                            disabled={!can(currentUser, 'settings.solicitacoes.aprovar')}
+                            aria-label={`Cargo ao aprovar ${item.name}`}
+                          >
+                            <option value="">Sem cargo</option>
+                            {roles.map((role) => (
+                              <option key={role.id} value={role.id}>
+                                {role.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            item.status === 'pending'
+                              ? 'status-warn'
+                              : item.status === 'approved'
+                                ? 'status-ok'
+                                : 'status-danger'
+                          }`}
+                        >
+                          <span className="status-dot" />
+                          {statusLabel[item.status]}
+                        </span>
+                      </td>
+                      <td>
+                        {item.status === 'pending' && (
+                          <div className="solicitacoes-actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={
+                                rejectingId === item.id ||
+                                !can(currentUser, 'settings.solicitacoes.aprovar')
+                              }
+                              onClick={() => void rejectInline(item)}
+                            >
+                              {rejectingId === item.id ? 'Recusando' : 'Recusar'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn"
+                              disabled={
+                                approvingId === item.id ||
+                                !can(currentUser, 'settings.solicitacoes.aprovar')
+                              }
+                              onClick={() => void approveInline(item)}
+                            >
+                              {approvingId === item.id ? 'Aprovando' : 'Aprovar'}
+                            </button>
+                          </div>
+                        )}
+                        {item.status === 'rejected' &&
+                          can(currentUser, 'settings.solicitacoes.excluir') && (
+                            <div className="solicitacoes-actions">
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                disabled={deletingId === item.id}
+                                onClick={() => void deleteInline(item)}
+                              >
+                                {deletingId === item.id ? 'Excluindo' : 'Excluir'}
+                              </button>
+                            </div>
+                          )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <PaginationFooter
+                total={accessRequestsTotal}
+                page={accessRequestsPage}
+                pageSize={accessRequestPageSize}
+                onPageChange={setAccessRequestsPage}
+                onPageSizeChange={(size) => {
+                  setAccessRequestPageSize(size);
+                  setAccessRequestsPage(1);
+                }}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function renderSection(): ReactNode {
     if (!sectionVisible(section)) return null;
     switch (section) {
@@ -2868,6 +3263,8 @@ export default function Settings() {
         return renderParametros();
       case 'auditoria':
         return requireProject(renderAuditoria());
+      case 'solicitacoes':
+        return renderSolicitacoes();
       case 'infos':
         return renderInfos();
     }

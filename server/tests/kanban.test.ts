@@ -1072,3 +1072,35 @@ describe('Kanban: auto-marca coluna de conclusao pelo nome', () => {
     expect(preCard.completed_at).not.toBeNull();
   });
 });
+
+describe('Kanban: default de coluna ao criar card', () => {
+  it('cria card sem column_id e ele cai na primeira coluna (Nova Solicitacao)', async () => {
+    const created = await agent.post(`/api/v1/projects/${projectId}/cards`).send({
+      title: 'Card sem coluna explicita',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.column_id).toBe(novaSolicitacaoId);
+
+    const list = await agent.get(`/api/v1/projects/${projectId}/cards`);
+    const card = list.body.find((row: { id: string }) => row.id === created.body.id);
+    expect(card).toBeTruthy();
+    expect(card.column_id).toBe(novaSolicitacaoId);
+
+    await agent
+      .delete(`/api/v1/projects/${projectId}/cards/${created.body.id}`)
+      .set(SECURITY_HEADER, SECURITY_PASSWORD);
+  });
+
+  it('cria card com column_id vazio (string) e tambem cai na primeira coluna', async () => {
+    const created = await agent.post(`/api/v1/projects/${projectId}/cards`).send({
+      title: 'Card com coluna vazia',
+      column_id: '',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.column_id).toBe(novaSolicitacaoId);
+
+    await agent
+      .delete(`/api/v1/projects/${projectId}/cards/${created.body.id}`)
+      .set(SECURITY_HEADER, SECURITY_PASSWORD);
+  });
+});

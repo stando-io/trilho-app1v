@@ -197,6 +197,7 @@ export default function Base() {
   async function saveCard(event: FormEvent) {
     event.preventDefault();
     if (!draft || !projectId) return;
+    const isCreate = !draft.id;
     setModalBusy(true);
     setModalError('');
     try {
@@ -237,6 +238,7 @@ export default function Base() {
       }
       setDraft(null);
       await load();
+      if (isCreate) toast.success('Tarefa criada com sucesso!');
     } catch (err) {
       setModalError(err instanceof ApiError ? err.message : 'Erro ao salvar o card');
     } finally {

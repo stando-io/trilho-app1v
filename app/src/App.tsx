@@ -7,6 +7,7 @@ import AcceptInvite from './pages/AcceptInvite';
 import ResetPassword from './pages/ResetPassword';
 import ForgotPassword from './pages/ForgotPassword';
 import ProjectPicker from './pages/ProjectPicker';
+import Sobre from './pages/Sobre';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Base from './pages/Base';
@@ -32,8 +33,15 @@ function RequireUser({ children }: { children: ReactNode }) {
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return <Loading />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
   return <Navigate to={homePathFor(user)} replace />;
+}
+
+function PublicOrShell() {
+  const { user, loading } = useAuth();
+  if (loading) return <Loading />;
+  if (!user) return <Sobre />;
+  return <Shell />;
 }
 
 function GuardedScreen({
@@ -86,11 +94,7 @@ export default function App() {
 
       <Route
         path="/"
-        element={
-          <RequireUser>
-            <Shell />
-          </RequireUser>
-        }
+        element={<PublicOrShell />}
       >
         <Route
           index

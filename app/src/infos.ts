@@ -11,7 +11,7 @@ export interface Release {
   notes: ReleaseNote[];
 }
 
-export const APP_BADGE = 'Trilho App — v1.0.7 (Build 2026.10)';
+export const APP_BADGE = 'Trilho App — v1.0.8 (Build 2026.11)';
 
 export const RELEASE_NOTE_LABELS: Record<ReleaseNoteKind, string> = {
   novo: 'Novo',
@@ -20,6 +20,52 @@ export const RELEASE_NOTE_LABELS: Record<ReleaseNoteKind, string> = {
 };
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.0.8',
+    date: 'Novembro de 2026',
+    notes: [
+      {
+        kind: 'novo',
+        text: 'Tela de login com solicitação de conta: novos usuários pedem acesso e ficam pendentes até aprovação.',
+      },
+      {
+        kind: 'novo',
+        text: 'Painel de Solicitações de Acesso em Configurações, com busca, filtro de status, aprovar e recusar.',
+      },
+      {
+        kind: 'novo',
+        text: 'Exclusão de solicitações recusadas com permissão própria Excluir; o pedido e a conta do usuário são apagados.',
+      },
+      {
+        kind: 'novo',
+        text: 'Toasts de confirmação ao criar e excluir tarefas.',
+      },
+      {
+        kind: 'novo',
+        text: 'Cards de atualizações colapsáveis na seção Infos Trilho.',
+      },
+      {
+        kind: 'melhoria',
+        text: 'Integrações unificadas em Webhooks, com modal de novo webhook reestruturado.',
+      },
+      {
+        kind: 'melhoria',
+        text: 'Solicitação aprovada sai automaticamente da lista e controles do cabeçalho alinhados à direita.',
+      },
+      {
+        kind: 'melhoria',
+        text: 'Solicitações de Acesso movidas para dentro de Usuários e Permissões, logo após Níveis de Acesso.',
+      },
+      {
+        kind: 'correcao',
+        text: 'Botão Salvar habilitado em Nova Tarefa mesmo sem coluna selecionada.',
+      },
+      {
+        kind: 'correcao',
+        text: 'Botão Salvar de notificações alinhado à direita em Parâmetros.',
+      },
+    ],
+  },
   {
     version: '1.0.7',
     date: 'Outubro de 2026',

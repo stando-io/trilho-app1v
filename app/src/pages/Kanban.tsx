@@ -578,6 +578,7 @@ export default function Kanban() {
           task_code: created.task_code,
           column_id: created.column_id,
         });
+        toast.success('Tarefa criada com sucesso!');
       }
       await loadBoard();
     } catch (err) {
@@ -593,7 +594,10 @@ export default function Kanban() {
     const result = await structural(() =>
       api(`/projects/${projectId}/cards/${draft.id}`, { method: 'DELETE' }),
     );
-    if (result.ok) setDraft(null);
+    if (result.ok) {
+      setDraft(null);
+      toast.success('Tarefa excluída com sucesso!');
+    }
   }
 
   async function createColumn(event: FormEvent) {
