@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --menu-bg: #0f1b31;
   --menu-fg: #e9ecef;
   --menu-dim: #98a2ad;
@@ -3581,7 +3581,7 @@ select.is-error:focus {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .infos-note {
@@ -7821,6 +7821,21 @@ input:disabled {
   --navy-hover: #0e1d38;
   --orange: #fa7a2f;
   --line-gray: #d0d5dd;
+}
+
+.infos-notes-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease-in-out;
+}
+
+.infos-release.open .infos-notes-wrap {
+  grid-template-rows: 1fr;
+}
+
+.infos-notes-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .pub-page {

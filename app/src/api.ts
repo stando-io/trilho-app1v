@@ -1,10 +1,9 @@
-﻿import { getSecurityPassword } from './securityPassword';
+import { getSecurityPassword } from './securityPassword';
 
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
-    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -12,7 +11,7 @@ export class ApiError extends Error {
 }
 
 interface ErrorBody {
-  error?: { message?: string; code?: string };
+  error?: { message?: string };
 }
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -40,6 +39,10 @@ function isSecurityMessage(status: number, message: string): boolean {
   return status === 400 && /senha de segurança/i.test(message);
 }
 
+function getApiBaseUrl(): string {
+  return import.meta.env.VITE_API_URL ?? '';
+}
+
 async function requestOnce<T>(
   path: string,
   options: RequestInit,
@@ -47,7 +50,10 @@ async function requestOnce<T>(
 ): Promise<T> {
   const { headers, body: requestBody, method: reqMethod, ...rest } = options;
   const securityPassword = passwordOverride ?? getSecurityPassword();
-  let finalBody: BodyInit | null | undefined;
+  const baseUrl = getApiBaseUrl();
+  const url = baseUrl ? `${baseUrl}/api/v1${path}` : `/api/v1${path}`;
+
+  let finalBody: BodyInit | null | undefined = requestBody as BodyInit | null | undefined;
   if (typeof requestBody === 'string') {
     finalBody = requestBody;
   } else if (requestBody && typeof requestBody === 'object' && !(requestBody instanceof FormData) && !(requestBody instanceof Blob) && !(requestBody instanceof ArrayBuffer)) {
@@ -55,9 +61,6 @@ async function requestOnce<T>(
   } else {
     finalBody = requestBody as BodyInit | null | undefined;
   }
-
-  const baseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
-  const url = baseUrl ? `${baseUrl}/api/v1${path}` : `/api/v1${path}`;
 
   const res = await fetch(url, {
     method: reqMethod ?? 'GET',
@@ -79,13 +82,11 @@ async function requestOnce<T>(
   const body: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const bodyObj =
-      body && typeof body === 'object' ? (body as ErrorBody) : null;
     const message =
-      bodyObj?.error?.message ??
-      (typeof body === 'string' && body ? body : 'Erro inesperado. Tente novamente.');
-    const code = bodyObj?.error?.code;
-    throw new ApiError(res.status, message, code);
+      body && typeof body === 'object' && (body as ErrorBody).error?.message
+        ? (body as ErrorBody).error!.message!
+        : 'Erro inesperado. Tente novamente.';
+    throw new ApiError(res.status, message);
   }
 
   return body as T;

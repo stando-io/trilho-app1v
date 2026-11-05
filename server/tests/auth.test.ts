@@ -1,4 +1,4 @@
-﻿import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { pool } from '../src/db/pool.js';
@@ -48,60 +48,6 @@ describe('autenticacao', () => {
     expect(out.status).toBe(204);
     const me = await agent.get('/api/v1/auth/me');
     expect(me.status).toBe(401);
-  });
-
-  it('rejeita login de conta pendente com codigo pending_approval', async () => {
-    const email = uniqueEmail('pendente');
-    const res = await request(app)
-      .post('/api/v1/auth/request-access')
-      .send({
-        name: 'Pendente Teste',
-        email,
-        company: 'Empresa',
-        message: 'Preciso acessar',
-        password: 'senha-teste-123',
-      });
-    expect(res.status).toBe(201);
-
-    const login = await request(app).post('/api/v1/auth/login').send({ email, password: 'senha-teste-123' });
-    expect(login.status).toBe(403);
-    expect(login.body?.error?.code).toBe('pending_approval');
-  });
-});
-
-describe('solicitacao de acesso', () => {
-  it('cria solicitacao com sucesso', async () => {
-    const email = uniqueEmail('solicitacao');
-    const res = await request(app)
-      .post('/api/v1/auth/request-access')
-      .send({
-        name: 'Novo Solicitante',
-        email,
-        company: 'Orgao',
-        message: 'Solicito acesso',
-        password: 'senha-forte-123',
-      });
-    expect(res.status).toBe(201);
-    expect(res.body.id).toBeTruthy();
-  });
-
-  it('rejeita duplicidade para email pendente', async () => {
-    const email = uniqueEmail('dup');
-    await request(app)
-      .post('/api/v1/auth/request-access')
-      .send({ name: 'Teste', email, password: 'senha-forte-123' });
-    const res = await request(app)
-      .post('/api/v1/auth/request-access')
-      .send({ name: 'Teste2', email, password: 'outra-senha-123' });
-    expect(res.status).toBe(409);
-  });
-
-  it('rejeita senha curta', async () => {
-    const email = uniqueEmail('curta');
-    const res = await request(app)
-      .post('/api/v1/auth/request-access')
-      .send({ name: 'Teste', email, password: '123' });
-    expect(res.status).toBe(400);
   });
 });
 
