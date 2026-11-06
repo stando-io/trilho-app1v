@@ -34,6 +34,9 @@ export const PERMISSION_LEAVES = [
   'settings.integracoes',
   'settings.parametros',
   'settings.auditoria',
+  'settings.solicitacoes.visualizar',
+  'settings.solicitacoes.aprovar',
+  'settings.solicitacoes.excluir',
 ] as const;
 
 export type Permission = (typeof PERMISSION_LEAVES)[number];

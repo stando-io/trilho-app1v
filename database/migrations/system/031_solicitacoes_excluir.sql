@@ -1,0 +1,8 @@
+-- 031_solicitacoes_excluir.sql
+-- Nova permissao de exclusao de solicitacoes de acesso (somente recusadas).
+-- Concede aos perfis que ja possuem a permissao de aprovar/recusar.
+
+UPDATE profiles
+SET permissions = permissions || '["settings.solicitacoes.excluir"]'
+WHERE permissions @> '["settings.solicitacoes.aprovar"]'
+  AND NOT (permissions @> '["settings.solicitacoes.excluir"]');

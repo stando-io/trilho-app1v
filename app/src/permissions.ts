@@ -126,6 +126,15 @@ export const PERMISSION_TREE: PermissionModule[] = [
               { type: 'action', key: 'settings.niveis.excluir', label: 'Excluir' },
             ],
           },
+          {
+            type: 'group',
+            label: 'Solicitações de Acesso',
+            children: [
+              { type: 'action', key: 'settings.solicitacoes.visualizar', label: 'Visualizar' },
+              { type: 'action', key: 'settings.solicitacoes.aprovar', label: 'Aprovar/Recusar' },
+              { type: 'action', key: 'settings.solicitacoes.excluir', label: 'Excluir' },
+            ],
+          },
         ],
       },
       { type: 'action', key: 'settings.temas', label: 'Temas' },

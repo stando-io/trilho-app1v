@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -11,7 +12,7 @@ export class ApiError extends Error {
 }
 
 interface ErrorBody {
-  error?: { message?: string };
+  error?: { message?: string; code?: string };
 }
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -56,10 +57,14 @@ async function requestOnce<T>(
   let finalBody: BodyInit | null | undefined = requestBody as BodyInit | null | undefined;
   if (typeof requestBody === 'string') {
     finalBody = requestBody;
-  } else if (requestBody && typeof requestBody === 'object' && !(requestBody instanceof FormData) && !(requestBody instanceof Blob) && !(requestBody instanceof ArrayBuffer)) {
+  } else if (
+    requestBody &&
+    typeof requestBody === 'object' &&
+    !(requestBody instanceof FormData) &&
+    !(requestBody instanceof Blob) &&
+    !(requestBody instanceof ArrayBuffer)
+  ) {
     finalBody = JSON.stringify(requestBody);
-  } else {
-    finalBody = requestBody as BodyInit | null | undefined;
   }
 
   const res = await fetch(url, {
@@ -70,7 +75,10 @@ async function requestOnce<T>(
       ...(securityPassword ? { 'x-security-password': securityPassword } : {}),
       ...(headers as Record<string, string> | undefined),
     },
-    body: reqMethod && reqMethod.toUpperCase() !== 'GET' && reqMethod.toUpperCase() !== 'HEAD' ? finalBody : undefined,
+    body:
+      reqMethod && reqMethod.toUpperCase() !== 'GET' && reqMethod.toUpperCase() !== 'HEAD'
+        ? finalBody
+        : undefined,
     ...rest,
   });
 
@@ -82,11 +90,12 @@ async function requestOnce<T>(
   const body: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
+    const bodyObj = body && typeof body === 'object' ? (body as ErrorBody) : null;
     const message =
-      body && typeof body === 'object' && (body as ErrorBody).error?.message
-        ? (body as ErrorBody).error!.message!
-        : 'Erro inesperado. Tente novamente.';
-    throw new ApiError(res.status, message);
+      bodyObj?.error?.message ??
+      (typeof body === 'string' && body ? body : 'Erro inesperado. Tente novamente.');
+    const code = bodyObj?.error?.code;
+    throw new ApiError(res.status, message, code);
   }
 
   return body as T;

@@ -5,6 +5,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -22,7 +23,7 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (error instanceof ApiError) {
-    res.status(error.status).json({ error: { message: error.message } });
+    res.status(error.status).json({ error: { message: error.message, code: error.code } });
     return;
   }
   if (error instanceof ZodError) {

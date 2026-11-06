@@ -15,6 +15,7 @@ import apiKeysRouter from './routes/apiKeys.js';
 import profilesRouter from './routes/profiles.js';
 import rolesRouter from './routes/roles.js';
 import usersRouter from './routes/users.js';
+import accessRequestsRouter from './routes/accessRequests.js';
 import settingsRouter from './routes/settings.js';
 import notificationsRouter from './routes/notifications.js';
 import projectsRouter from './routes/projects.js';
@@ -53,7 +54,7 @@ export function createApp(): express.Express {
       store: new PgSession({ pool, tableName: 'sessions' }),
       cookie: {
         httpOnly: true,
-        sameSite: config.isProduction ? 'none' : 'lax',
+        sameSite: 'lax',
         secure: config.cookieSecure,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
@@ -79,6 +80,7 @@ export function createApp(): express.Express {
   app.use('/api/v1/profiles', profilesRouter);
   app.use('/api/v1/roles', rolesRouter);
   app.use('/api/v1/users', usersRouter);
+  app.use('/api/v1/access-requests', accessRequestsRouter);
   app.use('/api/v1/settings', settingsRouter);
   app.use('/api/v1/notifications', notificationsRouter);
   app.use('/api/v1/projects', projectsRouter);

@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { api } from './api';
 import type { MeUser } from './types';
 
+export { ApiError } from './api';
+
 interface AuthContextValue {
   user: MeUser | null;
   loading: boolean;
