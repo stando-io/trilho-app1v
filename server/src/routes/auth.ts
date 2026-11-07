@@ -241,9 +241,12 @@ router.post('/request-access', requestAccessLimiter, async (req, res, next) => {
     );
     if (existing) {
       if (existing.approval_status === 'pending') {
-        throw new ApiError(409, 'Este e-mail já possui um cadastro aguardando aprovação.');
+        throw new ApiError(409, 'Este e-mail já possui um cadastro aguardando aprovação.', 'email_pending');
       }
-      throw new ApiError(409, 'Já existe um usuário com este e-mail');
+      if (existing.approval_status === 'rejected') {
+        throw new ApiError(409, 'E-mail já recusado. Entre em contato com o administrador.', 'email_rejected');
+      }
+      throw new ApiError(409, 'Já existe um usuário com este e-mail', 'email_exists');
     }
 
     const passwordHash = await hash(body.password);

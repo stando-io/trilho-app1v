@@ -94,6 +94,15 @@ describe('solicitacao de acesso', () => {
       .post('/api/v1/auth/request-access')
       .send({ name: 'Teste2', email, password: 'outra-senha-123' });
     expect(res.status).toBe(409);
+    expect(res.body?.error?.code).toBe('email_pending');
+  });
+
+  it('rejeita duplicidade para email ja aprovado com codigo email_exists', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/request-access')
+      .send({ name: 'Teste', email: ADMIN_EMAIL, password: 'senha-forte-123' });
+    expect(res.status).toBe(409);
+    expect(res.body?.error?.code).toBe('email_exists');
   });
 
   it('rejeita senha curta', async () => {

@@ -7655,13 +7655,13 @@ input:disabled {
 }
 
 .landing-left {
-  flex: 0 0 42%;
+  flex: 0 0 50%;
   background: #12213E;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 24px;
 }
 
 .landing-brand {
@@ -7685,12 +7685,12 @@ input:disabled {
 }
 
 .landing-right {
-  flex: 1 1 58%;
+  flex: 1 1 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--surface, #ffffff);
+  background: #e9f1fa;
 }
 
 .landing-tabs {
@@ -7772,8 +7772,9 @@ input:disabled {
 
   .landing-left {
     flex: none;
-    height: 32vh;
-    padding: 24px;
+    height: auto;
+    min-height: 32vh;
+    padding: 20px;
   }
 
   .landing-brand-name {
@@ -7923,8 +7924,445 @@ input:disabled {
 }
 
 .login-page .landing-split {
-  flex: 1;
   min-height: 0;
+}
+
+/* ===== Login: painel esquerdo ===== */
+.login-page {
+  background: #e9f1fa;
+}
+
+.landing-intro {
+  width: 100%;
+}
+
+.landing-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+  color: #ffffff;
+}
+
+.landing-sub {
+  margin: 12px 0 0;
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #aab6cf;
+}
+
+/* ===== Login: abas do card (texto puro + sublinhado laranja) ===== */
+.login-page .landing-tabs {
+  gap: 22px;
+}
+
+.login-page .landing-tab {
+  flex: 0 0 auto;
+  padding: 0 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted, #66707c);
+}
+
+.login-page .landing-tab:hover {
+  color: var(--accent, #173964);
+}
+
+.login-page .landing-tab-active {
+  background: none;
+  border-bottom-color: var(--orange);
+  color: var(--text, #131720);
+  font-weight: 700;
+}
+
+/* ===== Login: forms no tema claro (escopo fechado) ===== */
+.login-page input:focus,
+.login-page select:focus,
+.login-page textarea:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(250, 122, 47, 0.22);
+}
+
+.login-page input:-webkit-autofill,
+.login-page input:-webkit-autofill:hover,
+.login-page input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text, #131720);
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-out;
+}
+
+.login-page .btn {
+  width: 100%;
+}
+
+.login-page .link-row {
+  justify-content: center;
+}
+
+.login-page .link-row a,
+.login-link-btn {
+  color: var(--accent, #173964);
+  font-size: 13px;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.login-page .link-row a:hover,
+.login-link-btn:hover {
+  color: var(--accent-hover, #0f1b31);
+  text-decoration: underline;
+}
+
+.login-hint-btn {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: transparent;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.login-hint-btn:hover {
+  background: var(--danger-soft, #fef2f2);
+  color: #dc2626;
+}
+
+/* ===== Login: troca de aba sem recarregar ===== */
+.login-view {
+  animation: login-fade 0.18s ease-out;
+}
+
+@keyframes login-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===== Login: stepper do pedido pendente ===== */
+.login-page .landing-pending {
+  text-align: left;
+  padding: 4px 0;
+}
+
+.login-page .stepper {
+  gap: 16px;
+  margin: 4px 0 20px;
+}
+
+.login-page .stepper-step {
+  color: var(--muted, #66707c);
+}
+
+.login-page .stepper-done {
+  color: var(--text, #131720);
+}
+
+.login-page .stepper-done .stepper-icon {
+  background: #10b981;
+  color: #052e22;
+}
+
+.login-page .stepper-active .stepper-icon {
+  position: relative;
+  background: transparent;
+  border: 2px solid var(--orange);
+  font-size: 0;
+}
+
+.login-page .stepper-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: stepper-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes stepper-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+}
+
+.login-page .stepper-circle {
+  background: transparent;
+  border: 2px solid #475569;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-view {
+    animation: none;
+  }
+
+  .login-page .stepper-dot::after {
+    animation: none;
+  }
+}
+
+/* ===== Ilustracao do trem (Login) ===== */
+.lt-figure {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 28px;
+  container-type: inline-size;
+  container-name: lttrain;
+}
+
+.lt-panel {
+  background: #0f1d3a;
+  border-radius: 12px;
+  padding: 30px 20px 24px;
+}
+
+.lt-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.lt-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.lt-st {
+  cursor: pointer;
+}
+
+.lt-post {
+  stroke: #334155;
+  stroke-width: 2;
+  transition: stroke 0.3s;
+}
+
+.lt-st.lt-on .lt-post {
+  stroke: var(--orange);
+}
+
+.lt-node {
+  fill: #12213e;
+  stroke: #475569;
+  stroke-width: 2.5px;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill 0.15s, stroke 0.15s, transform 0.15s;
+}
+
+.lt-st:hover .lt-node {
+  fill: var(--orange);
+  transform: scale(1.29);
+}
+
+.lt-st.lt-on .lt-node {
+  fill: var(--orange);
+  stroke: #ffffff;
+  stroke-width: 3px;
+  transform: scale(1.43);
+}
+
+.lt-pulse {
+  display: none;
+  fill: var(--orange);
+  opacity: 0.5;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.lt-st.lt-on .lt-pulse {
+  display: block;
+  animation: lt-pulse 2s ease-out infinite;
+}
+
+@keyframes lt-pulse {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+.lt-rock {
+  animation: lt-rock 1.8s ease-in-out infinite;
+}
+
+@keyframes lt-rock {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.lt-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lt-spin 0.6s linear infinite;
+}
+
+@keyframes lt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lt-headlight {
+  filter: drop-shadow(0 0 6px rgba(0, 174, 209, 0.35));
+}
+
+.lt-wrap.lt-stopped .lt-spin {
+  animation-play-state: paused;
+}
+
+/* --- placas das estacoes --- */
+.lt-labels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.lt-lb {
+  display: block;
+  width: calc(100% - 12px);
+  max-width: 300px;
+  margin: 0 6px;
+  padding: 9px 8px 10px;
+  border: 1px solid #2a3a5c;
+  background: #12213e;
+  border-radius: 6px;
+  font-family: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.lt-lb:hover {
+  border-color: var(--orange);
+}
+
+.lt-lb:focus-visible {
+  outline: 2px solid #00aed1;
+  outline-offset: 2px;
+}
+
+.lt-nm {
+  display: block;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: #aab6cf;
+  transition: color 0.3s;
+}
+
+.lt-ds {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #7f8cab;
+  margin-top: 3px;
+  transition: color 0.3s;
+}
+
+.lt-lb.lt-on {
+  border-color: var(--orange);
+  background: #1c2540;
+  box-shadow: 0 0 14px rgba(250, 122, 47, 0.35);
+}
+
+.lt-lb.lt-on .lt-nm {
+  font-weight: 700;
+  color: var(--orange);
+}
+
+.lt-lb.lt-on .lt-ds {
+  color: #f1d6c3;
+}
+
+.lt-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@container lttrain (max-width: 640px) {
+  .lt-ds {
+    display: none;
+  }
+
+  .lt-nm {
+    font-size: 12px;
+  }
+}
+
+@container lttrain (max-width: 420px) {
+  .lt-panel {
+    padding: 24px 12px 18px;
+  }
+
+  .lt-lb {
+    margin: 0 3px;
+    width: calc(100% - 6px);
+  }
+
+  .lt-nm {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-rock,
+  .lt-spin,
+  .lt-st.lt-on .lt-pulse {
+    animation: none;
+  }
+
+  .lt-lb,
+  .lt-nm,
+  .lt-ds,
+  .lt-post,
+  .lt-node {
+    transition: none;
+  }
 }
 
 /* --- Abertura --- */
