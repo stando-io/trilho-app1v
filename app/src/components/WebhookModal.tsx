@@ -72,13 +72,6 @@ export function WebhookModal({ mode, webhook, gate, onClose, onSaved }: WebhookM
     );
   }
 
-  function toggleGroup(groupValues: WebhookEvent[], checked: boolean) {
-    setEvents((prev) => {
-      const withoutGroup = prev.filter((item) => !groupValues.includes(item));
-      return checked ? [...withoutGroup, ...groupValues] : withoutGroup;
-    });
-  }
-
   function toggleAll(checked: boolean) {
     setEvents(checked ? [...ALL_EVENT_VALUES] : []);
   }
@@ -166,96 +159,126 @@ export function WebhookModal({ mode, webhook, gate, onClose, onSaved }: WebhookM
 
         <form onSubmit={(event) => void handleSave(event)}>
           <div className="webhook-modal-body">
-            <label className="field">
-              <span>Nome</span>
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ex.: Notificação de tarefa criada"
-                required
-                minLength={2}
-                maxLength={80}
-              />
-            </label>
-            <label className="field">
-              <span>URL de destino</span>
-              <input
-                type="url"
-                value={url}
-                onChange={(event) => handleUrlChange(event.target.value)}
-                onBlur={handleUrlBlur}
-                placeholder="https://exemplo.com/webhook"
-                required
-                maxLength={2048}
-              />
-            </label>
-            <label className="field">
-              <span>Sistema Destino</span>
-              <select
-                value={system}
-                onChange={(event) => handleSystemChange(event.target.value as WebhookSystem)}
-              >
-                {WEBHOOK_SYSTEMS.map((option) => (
-                  <option key={option} value={option}>
-                    {WEBHOOK_SYSTEM_LABELS[option]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="webhook-events">
-              <div className="webhook-events-head">
-                <span>Eventos</span>
-                <label className="webhook-events-master">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={(event) => toggleAll(event.target.checked)}
-                  />
-                  Todos os Eventos
+            <div className="webhook-block">
+              <label className="field">
+                <span>Nome</span>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Ex: Notificações Slack / Webhook N8N / Automação CRM"
+                  required
+                  minLength={2}
+                  maxLength={80}
+                />
+              </label>
+              <div className="webhook-integration-row">
+                <label className="field webhook-field-url">
+                  <span>URL de destino</span>
+                  <span className="webhook-url-wrap">
+                    <svg
+                      className="webhook-url-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(event) => handleUrlChange(event.target.value)}
+                      onBlur={handleUrlBlur}
+                      placeholder="https://api.seusistema.com/v1/webhooks/trilho"
+                      required
+                      maxLength={2048}
+                    />
+                  </span>
                 </label>
+                <label className="field webhook-field-system">
+                  <span>Sistema Destino</span>
+                  <select
+                    value={system}
+                    onChange={(event) => handleSystemChange(event.target.value as WebhookSystem)}
+                  >
+                    {WEBHOOK_SYSTEMS.map((option) => (
+                      <option key={option} value={option}>
+                        {WEBHOOK_SYSTEM_LABELS[option]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="field webhook-field-status">
+                  <span>Webhook Ativo</span>
+                  <label
+                    className="conexoes-toggle webhook-active-toggle"
+                    title="Webhook Ativo (habilitado por padrão)"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={(event) => setActive(event.target.checked)}
+                      aria-label="Webhook Ativo"
+                    />
+                    <span className="conexoes-toggle-slider" aria-hidden="true" />
+                  </label>
+                </div>
               </div>
+            </div>
+
+            <div className="webhook-block webhook-block-events">
+              <div className="webhook-section-title">Eventos que dispararão este webhook</div>
+              <label className="webhook-master-card">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(event) => toggleAll(event.target.checked)}
+                />
+                <span className="webhook-master-text">
+                  <span className="webhook-master-title">Todos os Eventos (Notificação Global)</span>
+                  <span className="webhook-master-desc">
+                    Enviar notificações de qualquer alteração no sistema
+                  </span>
+                </span>
+              </label>
               {events.length === 0 && (
                 <p className="webhook-events-hint">Selecione ao menos um evento.</p>
               )}
-              {WEBHOOK_EVENT_GROUPS.map((group) => {
-                const groupEntries = WEBHOOK_EVENTS.filter((entry) => entry.group === group.id);
-                const groupValues = groupEntries.map((entry) => entry.value) as WebhookEvent[];
-                const groupSelected = groupValues.every((value) => events.includes(value));
-                return (
-                  <div key={group.id} className="webhook-events-group">
-                    <label className="webhook-events-group-title">
-                      <input
-                        type="checkbox"
-                        checked={groupSelected}
-                        onChange={(event) => toggleGroup(groupValues, event.target.checked)}
-                      />
-                      {group.label}
-                    </label>
-                    {groupEntries.map((entry) => (
-                      <label key={entry.value} className="webhook-event-row">
-                        <input
-                          type="checkbox"
-                          checked={events.includes(entry.value)}
-                          onChange={() => toggleEvent(entry.value)}
-                        />
-                        <span className="webhook-event-label">{entry.label}</span>
-                        <code className="webhook-event-code">{entry.value}</code>
-                      </label>
-                    ))}
-                  </div>
-                );
-              })}
+              <div className="webhook-categories">
+                {WEBHOOK_EVENT_GROUPS.map((group) => {
+                  const groupEntries = WEBHOOK_EVENTS.filter((entry) => entry.group === group.id);
+                  const isFull = group.id === 'base';
+                  return (
+                    <div
+                      key={group.id}
+                      className={`webhook-cat${isFull ? ' webhook-cat-full' : ''}`}
+                    >
+                      <div className="webhook-cat-title">{group.label}</div>
+                      <div
+                        className={`webhook-cat-items${isFull ? ' webhook-cat-items-inline' : ''}`}
+                      >
+                        {groupEntries.map((entry) => (
+                          <label key={entry.value} className="webhook-event-row">
+                            <input
+                              type="checkbox"
+                              checked={events.includes(entry.value)}
+                              onChange={() => toggleEvent(entry.value)}
+                            />
+                            <span className="webhook-event-label">{entry.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <label className="webhook-active-row">
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={(event) => setActive(event.target.checked)}
-              />
-              Ativo
-            </label>
           </div>
 
           <div className="webhook-modal-foot">
@@ -275,8 +298,8 @@ export function WebhookModal({ mode, webhook, gate, onClose, onSaved }: WebhookM
               <button type="button" className="btn btn-secondary" onClick={onClose}>
                 Cancelar
               </button>
-              <button type="submit" className="btn" disabled={!canSave || busy}>
-                {busy ? 'Salvando...' : 'Salvar'}
+              <button type="submit" className="btn btn-orange" disabled={!canSave || busy}>
+                {busy ? 'Salvando...' : 'Salvar Webhook'}
               </button>
             </div>
           </div>
